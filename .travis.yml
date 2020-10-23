@@ -1,0 +1,53 @@
+# Configure.
+env: TOX_ENV=py
+language: python
+matrix:
+  include:
+    - python: 3.5
+      env: TOX_ENV=lint
+      after_success:
+        - echo
+    - python: 3.5
+      env: TOX_ENV=docs
+      after_success:
+        - eval "$(ssh-agent -s)"; touch docs/key; chmod 0600 docs/key
+        - openssl aes-256-cbc -d -K "$encrypted_9c2bf3fbb9ea_key" -iv "$encrypted_9c2bf3fbb9ea_iv"
+          < docs/key.enc > docs/key && ssh-add docs/key
+        - git remote set-url --push origin "git@github.com:$TRAVIS_REPO_SLUG"
+        - export ${!TRAVIS*}
+        - tox -e docsV
+python:
+  - 3.5
+  - 3.4
+  - 3.3
+  - 2.7
+sudo: false
+
+# Run.
+install: pip install tox
+before_script:
+  - git config --global user.email "builds@travis-ci.com"
+  - git config --global user.name "Travis CI"
+script: tox -e $TOX_ENV
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+# Deploy.
+deploy:
+  provider: pypi
+  user: Robpol86
+  password:
+    secure:
+      "SL9UOy/1SkvG3t5K1kRjN8OPLoP8OR6DAw5hiWkUBaqRsqvWh3YJep6uECQ20gYAU5HXgLJ\
+      Jug1LCUqiJ52JBCHbrc5rWy0XqfxwhG2euMfT3D3D527URthifchECNIhJpYDffuiCT5m4VR\
+      zg35E98UoiFAWpTHvyzO33JyP5ZWXrlEI1HYXRwS9fosJSsTNnzc5u4fraQs1mjCWSwRrS6+\
+      HUbbNY0NygQ7wwL4KIjn9/h1C3X4nqwBqgFt9Ed6yvQgXh3OMv/rseA6oko9Iw3pVJZR5emU\
+      sejcQ1txJ4EMbahcdWJFo4xpYy2VNxRAyQWtav4IWST19bGmhQB1Cgn2WBW7PQswYev+IZ7Z\
+      FS1L3OXFItUuS7IV/uOTnMPetD1WqIrVlPHy+N4Sy30QBoZPDO6/DlknPK4dDXhmb+atrVCZ\
+      z8y2Ol06QEwM8Ewmn+ch+Hez9dxLsD5TczHSYMrz/c/AloHqr+3lZDJ+hr0D2vvnerqLqJvH\
+      Mp5p+vwnYNtpSInlYNLvcUITpQaOaqBzkFiJ+mIFoswsPhfw15gGZ0akIvVT9YAqJ2eeMrGx\
+      kzxiCBVD4dqGxMh318BmwXdurgWZbia2DJWs+QBNs44kiSByQmXWFXo2KamiBZAez+AdBPgA\
+      Hs/smp3nE3TI9cHQzzbhDFZftI4dtLf8osNI="
+  on:
+    condition: $TRAVIS_PYTHON_VERSION = 3.4
+    tags: true
